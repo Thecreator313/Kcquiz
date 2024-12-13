@@ -187,6 +187,21 @@
             display: block;
             animation: fadeInOut 4s ease-in-out;
         }
+        .popup .cancel-button {
+    margin-top: 10px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 20px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    width: 100%;
+}
+
+.popup .cancel-button:hover {
+    background-color: #e60000;
+}
 
         @keyframes fadeInOut {
             0% {
@@ -238,11 +253,13 @@
     </div>
 
     <!-- Popup for adding marks -->
-    <div class="popup" id="marks-popup">
-        <h3>Add Mark</h3>
-        <input type="number" id="mark-input" placeholder="Enter Mark" min="0" max="100">
-        <button onclick="addMark()">Save Mark</button>
-    </div>
+<!-- Popup for adding marks -->
+<div class="popup" id="marks-popup">
+    <h3>Add Mark</h3>
+    <input type="number" id="mark-input" placeholder="Enter Mark" min="0" max="100">
+    <button onclick="addMark()">Save Mark</button>
+    <button class="cancel-button" onclick="closePopup()">Cancel</button>
+</div>
 
     <!-- Toast Notification -->
     <div class="toast" id="toast-notification">Mark added successfully!</div>
@@ -303,6 +320,10 @@
                 console.error("Error fetching participants:", error);
             });
         }
+        // Function to close the popup
+window.closePopup = function () {
+    document.getElementById('marks-popup').classList.remove('active');
+};
 
         // Show popup to add marks
         function showMarkPopup(participantId) {
