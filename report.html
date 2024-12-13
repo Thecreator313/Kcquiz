@@ -128,21 +128,24 @@
             .map(([id, participant]) => ({
               id,
               ...participant,
-              totalMarks: calculateTotalMarks(participant.marks)
+              totalMarks: calculateTotalMarks(participant.marks),
             }))
             .sort((a, b) => b.totalMarks - a.totalMarks);
 
           let currentRank = 1;
           let previousMarks = null;
+          let skippedRanks = 0;
 
           rankedParticipants.forEach((participant, index) => {
             if (participant.totalMarks !== previousMarks) {
-              currentRank = index + 1;
+              currentRank = index + 1 - skippedRanks;
+            } else {
+              skippedRanks++;
             }
+
             previousMarks = participant.totalMarks;
 
             const card = document.createElement("div");
-            card.className
             card.className = "card";
             card.innerHTML = `
               <div class="rank-circle">${currentRank}</div>
