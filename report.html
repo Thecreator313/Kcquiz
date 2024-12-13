@@ -133,7 +133,7 @@
                 <img src="https://i.ibb.co/d72xswc/image.png" alt="Participant">
                 <div class="details">
                   <h3>${participant.name}</h3>
-                  <p>${participant.phone || "N/A"}</p>
+
                 </div>
                 <div class="total-marks">${totalMarks}</div>
               `;
@@ -161,7 +161,6 @@
   doc.setFillColor(0, 123, 255); // Blue color for header
   doc.rect(10, 30, 190, 10, 'F'); // Table header background
   doc.text('Name', 15, 35);
-  doc.text('Phone', 75, 35);
   doc.text('Total Marks', 140, 35);
 
   // Add space between header and first row
@@ -178,7 +177,6 @@
 
   cards.forEach((card, index) => {
     const name = card.querySelector(".details h3").textContent;
-    const phone = card.querySelector(".details p").textContent;
     const marks = card.querySelector(".total-marks").textContent;
 
     // Draw the row background with alternating colors
