@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script src='https://kit.fontawesome.com/a076d05399.js' crossorigin='anonymous'></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Responsive Website</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f6f9;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            padding-bottom: 60px; /* Space for the bottom navigation */
+        }
+        .section {
+            flex: 1;
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        .section.active {
+            display: block;
+        }
+        .bottom-nav {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            background-color: #00008B;
+            padding: 14px 0;
+            position: fixed;
+            width: 100%;
+            bottom: 0;
+            z-index: 999;
+            border-top: 1px solid #ddd;
+        }
+        .bottom-nav .nav-item {
+            color: white;
+            text-align: center;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 12px;
+            transition: transform 0.3s, color 0.3s;
+        }
+        .bottom-nav .nav-item:hover {
+            transform: scale(1.1);
+            color: #FFD700;
+        }
+        .bottom-nav .nav-item.active {
+            border-top: 4px solid #FFD700;
+            color: #FFD700;
+        }
+        .bottom-nav .nav-item i {
+            font-size: 28px;
+            margin-bottom: 6px;
+        }
+        .section h2 {
+            color: #00008B;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .section p {
+            font-size: 16px;
+            color: #333;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            margin: 20px 0;
+            text-align: left;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.3s;
+        }
+        .card:hover {
+            background-color: #f0f8ff;
+            transform: translateY(-5px);
+        }
+        .card-icon {
+            font-size: 40px;
+            color: #00008B;
+            transition: color 0.3s;
+        }
+        .card .card-title {
+            margin-top: 15px;
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+        }
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #fff;
+            padding: 25px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            display: none;
+            z-index: 10;
+            border-radius: 12px;
+            width: 300px;
+            max-width: 100%;
+        }
+        .popup.active {
+            display: block;
+        }
+        .popup input {
+            padding: 12px;
+            margin: 15px 0;
+            width: 100%;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        .popup button {
+            padding: 12px 20px;
+            background-color: #00008B;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+            .cardp {
+
+      display: flex;
+
+      align-items: center;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+      padding: 10px;
+    }
+
+    .cardp img {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-right: 15px;
+    }
+        .popup button:hover {
+            background-color: #0057b8;
+        }
+        .marks-list {
+            margin-top: 20px;
+            color: #333;
+        }
+        .marks-list .mark-item {
+            display: flex;
+            justify-content: space-between;
+            background-color: #f0f8ff;
+            padding: 12px;
+            border-radius: 8px;
+            margin: 5px 0;
+            align-items: center;
+        }
+        .marks-list .mark-item .mark-time {
+            font-size: 12px;
+            color: #777;
+        }
+
+        /* Notification Styles */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #00008B;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 16px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            display: block;
+            animation: fadeInOut 4s ease-in-out;
+        }
+
+        @keyframes fadeInOut {
+            0% {
+                opacity: 0;
+            }
+            25% {
+                opacity: 1;
+            }
+            75% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sections -->
+        <div class="section" id="marks-section">
+            <h2>Marks Section</h2>
+            <div id="participant-cards-container"></div>
+        </div>
+
+        <div class="section" id="settings-section">
+            <h2>Settings</h2>
+            <div class="card" onclick="window.location.href='participant.html'">
+                <i class="fas fa-user-plus card-icon"></i>
+                <div class="card-title">Add Participants</div>
+            </div>
+            <div class="card" onclick="window.location.href='report.html'">
+<i class='far fa-file-alt' style='font-size:48px;color:red'></i>
+                <div class="card-title">Report</div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bottom-nav">
+            <div class="nav-item" id="marks-nav" onclick="showSection('marks')">
+                <i class="fas fa-pencil-alt"></i>
+                <span>Marks</span>
+            </div>
+            <div class="nav-item" id="settings-nav" onclick="showSection('settings')">
+                <i class="fas fa-cogs"></i>
+                <span>Settings</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Popup for adding marks -->
+    <div class="popup" id="marks-popup">
+        <h3>Add Mark</h3>
+        <input type="number" id="mark-input" placeholder="Enter Mark" min="0" max="100">
+        <button onclick="addMark()">Save Mark</button>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast-notification">Mark added successfully!</div>
+
+    <!-- Firebase -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+        import { getDatabase, ref, get, set, push } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyD2KL9rylqxERm8HvCQywMlsAj0GF4CEGU",
+            authDomain: "quiz-3e9de.firebaseapp.com",
+            databaseURL: "https://quiz-3e9de-default-rtdb.firebaseio.com",
+            projectId: "quiz-3e9de",
+            storageBucket: "quiz-3e9de.firebasestorage.app",
+            messagingSenderId: "203388736003",
+            appId: "1:203388736003:web:f10a9c5fe0527450e07436",
+            measurementId: "G-RKWX4YMKVD"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Function to show selected section
+        window.showSection = function(section) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.getElementById(section + '-section').classList.add('active');
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(section + '-nav').classList.add('active');
+        }
+
+        // Fetch participants from Firebase
+        function fetchParticipants() {
+            const participantsRef = ref(db, 'participants');
+            get(participantsRef).then((snapshot) => {
+                if (snapshot.exists()) {
+                    const participants = snapshot.val();
+                    const container = document.getElementById('participant-cards-container');
+                    container.innerHTML = '';
+                    for (const key in participants) {
+                        if (participants.hasOwnProperty(key)) {
+                            const participant = participants[key];
+                            const card = document.createElement("div");
+              card.className = "cardp";
+              card.innerHTML = `
+                <img src="https://i.ibb.co/d72xswc/image.png" alt="Participant">
+                <div class="details">
+                  <h3>${participant.name}</h3>
+              
+                </div>
+                            `;
+                            card.onclick = () => showMarkPopup(key);
+                            container.appendChild(card);
+                        }
+                    }
+                }
+            }).catch((error) => {
+                console.error("Error fetching participants:", error);
+            });
+        }
+
+        // Show popup to add marks
+        function showMarkPopup(participantId) {
+            document.getElementById('marks-popup').classList.add('active');
+            const markInput = document.getElementById('mark-input');
+            markInput.value = '';
+            document.querySelector('#marks-popup button').onclick = () => saveMark(participantId);
+        }
+
+        // Save mark to Firebase with timestamp
+       // Save mark to Firebase with timestamp
+function saveMark(participantId) {
+    const markInput = document.getElementById('mark-input');
+    let mark = markInput.value.trim();  // Trim any extra spaces around input
+
+    const timestamp = new Date().toLocaleString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        hour: 'numeric', 
+        minute: 'numeric', 
+        hour12: true 
+    });
+
+    // Ensure mark is a valid number
+    mark = Number(mark);  // Convert mark to number
+    if (mark && !isNaN(mark)) {
+        const participantRef = ref(db, 'participants/' + participantId + '/marks');
+        const newMarkRef = push(participantRef);
+
+        // Save the mark as a number with timestamp
+        set(newMarkRef, { value: mark, time: timestamp });
+
+        // Show notification
+        const toast = document.getElementById('toast-notification');
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 4000);
+
+        // Hide popup
+        document.getElementById('marks-popup').classList.remove('active');
+        fetchParticipants(); // Refresh the participants list
+    } else {
+        alert('Please enter a valid number for the mark');
+    }
+}
+
+
+        // Load participants on page load
+        window.onload = function() {
+            fetchParticipants();
+            showSection('marks'); // Default section
+        }
+    </script>
+
+    <!-- FontAwesome for icons -->
+    <script src="https://kit.fontawesome.com/a076d05399.js"></script>
+</body>
+</html>

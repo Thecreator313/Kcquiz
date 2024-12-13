@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Participants</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <style>
+    /* General Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f5f9ff; /* Light blue background */
+      color: #002855; /* Dark blue text */
+      padding: 20px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+      color: #002855;
+    }
+
+    /* Cards */
+    .card {
+      background: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      margin-bottom: 15px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+      position: relative;
+    }
+
+    .card h3 {
+      margin-bottom: 10px;
+      color: #0056b3;
+    }
+
+    .card p {
+      margin: 5px 0;
+    }
+
+    .card .actions {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+    }
+
+    .card .actions button {
+      background: none;
+      border: none;
+      color: #ff5a5f;
+      font-size: 1.2rem;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    .card .actions button:hover {
+      color: #f75f5f;
+    }
+
+    /* Floating Action Button */
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background-color: #0056b3;
+      color: #ffffff;
+      border: none;
+      border-radius: 50%;
+      width: 60px;
+      height: 60px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 1.5rem;
+      box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    .fab:hover {
+      background-color: #004491;
+    }
+
+    /* Popup Form */
+    .popup {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.9);
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 15px;
+      box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+      width: 90%;
+      max-width: 400px;
+      transition: all 0.3s ease;
+      z-index: 1001;
+    }
+
+    .popup.show {
+      display: block;
+      transform: translate(-50%, -50%) scale(1);
+    }
+
+    .popup h2 {
+      color: #0056b3;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    .popup label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: bold;
+    }
+
+    .popup input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #0056b3;
+      border-radius: 5px;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+
+    .popup button {
+      background-color: #0056b3;
+      color: #ffffff;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 1rem;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    .popup button:hover {
+      background-color: #004491;
+    }
+
+    .popup .close-btn {
+      background-color: #ff5a5f;
+      margin-top: 0;
+    }
+
+    .popup .close-btn:hover {
+      background-color: #f75f5f;
+    }
+
+    /* Overlay */
+    .overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
+    }
+
+    .overlay.show {
+      display: block;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .card {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Participants</h1>
+  <div id="participants-list"></div>
+
+  <!-- Floating Action Button -->
+  <button class="fab" id="addParticipantBtn"><i class="fa-solid fa-plus"></i></button>
+
+  <!-- Popup Form -->
+  <div class="overlay" id="overlay"></div>
+  <div class="popup" id="popupForm">
+    <h2>Add Participant</h2>
+    <label for="name">Name</label>
+    <input type="text" id="name" placeholder="Enter name" required>
+    <label for="phone">Phone</label>
+    <input type="text" id="phone" placeholder="Enter phone number" required>
+    <button id="submitParticipant">Submit</button>
+    <button class="close-btn" id="closePopup">Cancel</button>
+  </div>
+
+  <!-- Firebase Configuration -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-app.js";
+    import { getDatabase, ref, push, onValue, remove, update } from "https://www.gstatic.com/firebasejs/11.1.0/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2KL9rylqxERm8HvCQywMlsAj0GF4CEGU",
+      authDomain: "quiz-3e9de.firebaseapp.com",
+      databaseURL: "https://quiz-3e9de-default-rtdb.firebaseio.com/",
+      projectId: "quiz-3e9de",
+      storageBucket: "quiz-3e9de.appspot.com",
+      messagingSenderId: "203388736003",
+      appId: "1:203388736003:web:f10a9c5fe0527450e07436",
+      measurementId: "G-RKWX4YMKVD"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const participantsRef = ref(db, "participants");
+
+    // DOM Elements
+    const addParticipantBtn = document.getElementById("addParticipantBtn");
+    const popupForm = document.getElementById("popupForm");
+    const overlay = document.getElementById("overlay");
+    const submitParticipant = document.getElementById("submitParticipant");
+    const closePopup = document.getElementById("closePopup");
+    const participantsList = document.getElementById("participants-list");
+
+    // Open Popup
+    addParticipantBtn.addEventListener("click", () => {
+      popupForm.classList.add("show");
+      overlay.classList.add("show");
+    });
+
+    // Close Popup
+    closePopup.addEventListener("click", () => {
+      popupForm.classList.remove("show");
+      overlay.classList.remove("show");
+    });
+
+    // Add Participant
+    submitParticipant.addEventListener("click", () => {
+      const name = document.getElementById("name").value;
+      const phone = document.getElementById("phone").value;
+
+      if (name && phone) {
+        push(participantsRef, { name, phone });
+        document.getElementById("name").value = "";
+        document.getElementById("phone").value = "";
+        popupForm.classList.remove("show");
+        overlay.classList.remove("show");
+      }
+    });
+
+    // Fetch and Display Participants
+    onValue(participantsRef, (snapshot) => {
+      participantsList.innerHTML = "";
+      snapshot.forEach((childSnapshot) => {
+        const data = childSnapshot.val();
+        const id = childSnapshot.key;
+
+        const card = document.createElement("div");
+        card.classList.add("card");
+
+        card.innerHTML = `
+          <h3>${data.name}</h3>
+          <p>Phone: ${data.phone}</p>
+          <div class="actions">
+            <button onclick="deleteParticipant('${id}')"><i class="fa-solid fa-trash"></i></button>
+            <button onclick="updateParticipant('${id}', '${data.name}', '${data.phone}')"><i class="fa-solid fa-pen"></i></button>
+          </div>
+        `;
+
+        participantsList.appendChild(card);
+      });
+    });
+
+    // Delete Participant
+    window.deleteParticipant = (id) => {
+      remove(ref(db, "participants/" + id));
+    };
+
+    // Update Participant
+    window.updateParticipant = (id, name, phone) => {
+      document.getElementById("name").value = name;
+      document.getElementById("phone").value = phone;
+      popupForm.classList.add("show");
+      overlay.classList.add("show");
+
+      submitParticipant.onclick = () => {
+        const updatedName = document.getElementById("name").value;
+        const updatedPhone = document.getElementById("phone").value;
+
+        if (updatedName && updatedPhone) {
+          update(ref(db, "participants/" + id), { name: updatedName, phone: updatedPhone });
+          popupForm.classList.remove("show");
+          overlay.classList.remove("show");
+        }
+      };
+    };
+  </script>
+</body>
+</html>
