@@ -1,10 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Quiz Leaderboard</title>
+  <title>Mark History</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
@@ -18,79 +17,44 @@
       max-width: 600px;
       margin: 20px auto;
       padding: 10px;
-    }
-
-    .card {
-      display: flex;
-      align-items: center;
       background: white;
       border-radius: 10px;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-      margin-bottom: 15px;
-      padding: 17px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    .rank-circle {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      width: 40px;
-      height: 40px;
-      border-radius: 50%;
-      background: linear-gradient(135deg, #007bff, #0056b3);
-      color: white;
-      font-size: 16px;
-      font-weight: bold;
-      margin-right: 15px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .details {
-      flex-grow: 1;
-    }
-
-    .details h3 {
-      margin: 0;
-      font-size: 18px;
+    h1 {
+      text-align: center;
       color: #333;
     }
 
-    .total-marks {
-      font-size: 20px;
+    .history-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 10px;
+      margin-bottom: 10px;
+      background-color: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    .history-item:nth-child(odd) {
+      background-color: #eef5ff;
+    }
+
+    .history-time {
+      color: #555;
+    }
+
+    .history-value {
       font-weight: bold;
       color: #007bff;
-    }
-
-    .fab {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      width: 60px;
-      height: 60px;
-      background: #007bff;
-      color: white;
-      border-radius: 50%;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-      cursor: pointer;
-      font-size: 24px;
-    }
-
-    .fab:hover {
-      background: #0056b3;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Quiz Leaderboard</h1>
-    <div id="participant-list"></div>
-  </div>
-
-  <div class="fab" onclick="downloadPDF()">
-    <i class="fas fa-download"></i>
+    <h1>Mark History</h1>
+    <div id="history-list"></div>
   </div>
 
   <script type="module">
@@ -111,126 +75,34 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const participantList = document.getElementById("participant-list");
+    const historyList = document.getElementById("history-list");
+    const participantId = localStorage.getItem("selectedParticipantId");
 
-    function calculateTotalMarks(marks) {
-      return Object.values(marks || {}).reduce((total, mark) => total + (mark.value || 0), 0);
-    }
+    function loadMarkHistory() {
+      const participantRef = ref(db, `participants/${participantId}/marks`);
+      onValue(participantRef, (snapshot) => {
+        historyList.innerHTML = "";
+        const marks = snapshot.val();
 
-    function loadParticipants() {
-      const participantsRef = ref(db, "participants");
-      onValue(participantsRef, (snapshot) => {
-        participantList.innerHTML = "";
-        const participants = snapshot.val();
-
-        if (participants) {
-          const rankedParticipants = Object.entries(participants)
-            .map(([id, participant]) => ({
-              id,
-              ...participant,
-              totalMarks: calculateTotalMarks(participant.marks),
-            }))
-            .sort((a, b) => b.totalMarks - a.totalMarks);
-
-          let currentRank = 1;
-          let previousMarks = null;
-          let skippedRanks = 0;
-
-          rankedParticipants.forEach((participant, index) => {
-            if (participant.totalMarks !== previousMarks) {
-              currentRank = index + 1 - skippedRanks;
-            } else {
-              skippedRanks++;
-            }
-
-            previousMarks = participant.totalMarks;
-
-            const card = document.createElement("div");
-            card.className = "card";
-            card.innerHTML = `
-              <div class="rank-circle">${currentRank}</div>
-              <div class="details">
-                <h3>${participant.name}</h3>
-              </div>
-              <div class="total-marks">${participant.totalMarks}</div>
+        if (marks) {
+          Object.values(marks).forEach((mark) => {
+            const historyItem = document.createElement("div");
+            historyItem.className = "history-item";
+            historyItem.innerHTML = `
+              <span class="history-time">${mark.time}</span>
+              <span class="history-value">${mark.value}</span>
             `;
-            participantList.appendChild(card);
+            historyList.appendChild(historyItem);
           });
         }
       });
     }
 
-    loadParticipants();
-
-    window.downloadPDF = function downloadPDF() {
-      const { jsPDF } = window.jspdf; // Correctly access jsPDF
-      const doc = new jsPDF(); // Create the PDF document
-
-      // Add title with large font and centered alignment
-      doc.setFontSize(24);
-      doc.setFont("helvetica", "bold");
-      doc.text('Quiz Leaderboard', 105, 20, { align: 'center' });
-
-      // Set up the table header with a blue background and white text
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      doc.setFillColor(0, 123, 255); // Blue color for header
-      doc.rect(10, 30, 190, 10, 'F'); // Table header background
-      doc.text('Rank', 15, 35);
-      doc.text('Name', 75, 35);
-      doc.text('Total Marks', 140, 35);
-
-      // Add space between header and first row
-      let y = 45; // Increase Y position to add space after the header
-
-      // Reset font color and set the regular font for table rows
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(0, 0, 0); // Black text
-
-      // Define alternating row colors for better readability
-      let rowColor = [245, 245, 245]; // Light gray color for odd rows
-
-      const cards = document.querySelectorAll(".card");
-
-      cards.forEach((card, index) => {
-        const rank = card.querySelector(".rank-circle").textContent;
-        const name = card.querySelector(".details h3").textContent;
-        const marks = card.querySelector(".total-marks").textContent;
-
-        // Draw the row background with alternating colors
-        doc.setFillColor(...rowColor);
-        doc.rect(10, y - 4, 190, 10, 'F'); // Draw background for the row
-
-        // Add participant details to the row
-        doc.text(rank, 15, y);
-        doc.text(name, 75, y);
-        doc.text(marks, 140, y);
-
-        // Alternate row colors
-        rowColor = rowColor[0] === 245 ? [255, 255, 255] : [245, 245, 245]; // Switch between light gray and white
-
-        y += 10;
-        if (y > 270) {
-          doc.addPage(); // Add a new page if the content exceeds the current page’s space
-          y = 10;
-        }
-      });
-
-      // Add a footer with the current date and page number
-      const pageCount = doc.internal.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(100, 100, 100); // Gray color for footer text
-        doc.text(`Page ${i} of ${pageCount}`, 180, 290);
-        doc.text(`Date: ${new Date().toLocaleDateString()}`, 10, 290); // Current date in footer
-      }
-
-      // Save the document
-      doc.save("quiz_leaderboard.pdf");
-    };
+    if (participantId) {
+      loadMarkHistory();
+    } else {
+      historyList.innerHTML = "<p>No participant selected.</p>";
+    }
   </script>
 </body>
 </html>
