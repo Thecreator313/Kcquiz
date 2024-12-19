@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Mark History</title>
+  <title>Quiz Leaderboard</title>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <style>
     body {
@@ -17,44 +18,85 @@
       max-width: 600px;
       margin: 20px auto;
       padding: 10px;
-      background: white;
-      border-radius: 10px;
-      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
 
-    h1 {
-      text-align: center;
+    .card {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      margin-bottom: 15px;
+      padding: 17px;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
+
+    .card:hover {
+      background-color: #f0f8ff;
+    }
+
+    .rank-circle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      margin-right: 15px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .details {
+      flex-grow: 1;
+    }
+
+    .details h3 {
+      margin: 0;
+      font-size: 18px;
       color: #333;
     }
 
-    .history-item {
-      display: flex;
-      justify-content: space-between;
-      padding: 10px;
-      margin-bottom: 10px;
-      background-color: #f9f9f9;
-      border: 1px solid #ddd;
-      border-radius: 5px;
-    }
-
-    .history-item:nth-child(odd) {
-      background-color: #eef5ff;
-    }
-
-    .history-time {
-      color: #555;
-    }
-
-    .history-value {
+    .total-marks {
+      font-size: 20px;
       font-weight: bold;
       color: #007bff;
+    }
+
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 60px;
+      height: 60px;
+      background: #007bff;
+      color: white;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      cursor: pointer;
+      font-size: 24px;
+    }
+
+    .fab:hover {
+      background: #0056b3;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>Mark History</h1>
-    <div id="history-list"></div>
+    <h1>Quiz Leaderboard</h1>
+    <div id="participant-list"></div>
+  </div>
+
+  <div class="fab" onclick="downloadPDF()">
+    <i class="fas fa-download"></i>
   </div>
 
   <script type="module">
@@ -75,34 +117,122 @@
     const app = initializeApp(firebaseConfig);
     const db = getDatabase(app);
 
-    const historyList = document.getElementById("history-list");
-    const participantId = localStorage.getItem("selectedParticipantId");
+    const participantList = document.getElementById("participant-list");
 
-    function loadMarkHistory() {
-      const participantRef = ref(db, `participants/${participantId}/marks`);
-      onValue(participantRef, (snapshot) => {
-        historyList.innerHTML = "";
-        const marks = snapshot.val();
+    function calculateTotalMarks(marks) {
+      return Object.values(marks || {}).reduce((total, mark) => total + (mark.value || 0), 0);
+    }
 
-        if (marks) {
-          Object.values(marks).forEach((mark) => {
-            const historyItem = document.createElement("div");
-            historyItem.className = "history-item";
-            historyItem.innerHTML = `
-              <span class="history-time">${mark.time}</span>
-              <span class="history-value">${mark.value}</span>
+    function loadParticipants() {
+      const participantsRef = ref(db, "participants");
+      onValue(participantsRef, (snapshot) => {
+        participantList.innerHTML = "";
+        const participants = snapshot.val();
+
+        if (participants) {
+          const rankedParticipants = Object.entries(participants)
+            .map(([id, participant]) => ({
+              id,
+              ...participant,
+              totalMarks: calculateTotalMarks(participant.marks),
+            }))
+            .sort((a, b) => b.totalMarks - a.totalMarks);
+
+          let currentRank = 1;
+          let previousMarks = null;
+          let skippedRanks = 0;
+
+          rankedParticipants.forEach((participant, index) => {
+            if (participant.totalMarks !== previousMarks) {
+              currentRank = index + 1 - skippedRanks;
+            } else {
+              skippedRanks++;
+            }
+
+            previousMarks = participant.totalMarks;
+
+            const card = document.createElement("div");
+            card.className = "card";
+            card.innerHTML = `
+              <div class="rank-circle">${currentRank}</div>
+              <div class="details">
+                <h3>${participant.name}</h3>
+              </div>
+              <div class="total-marks">${participant.totalMarks}</div>
             `;
-            historyList.appendChild(historyItem);
+            card.onclick = () => viewHistory(participant.id);
+            participantList.appendChild(card);
           });
         }
       });
     }
 
-    if (participantId) {
-      loadMarkHistory();
-    } else {
-      historyList.innerHTML = "<p>No participant selected.</p>";
+    function viewHistory(participantId) {
+      localStorage.setItem("selectedParticipantId", participantId);
+      window.location.href = "history.html";
     }
+
+    loadParticipants();
+
+    window.downloadPDF = function downloadPDF() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(24);
+      doc.setFont("helvetica", "bold");
+      doc.text('Quiz Leaderboard', 105, 20, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.setFillColor(0, 123, 255);
+      doc.rect(10, 30, 190, 10, 'F');
+      doc.text('Rank', 15, 35);
+      doc.text('Name', 75, 35);
+      doc.text('Total Marks', 140, 35);
+
+      let y = 45;
+
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(0, 0, 0);
+
+      let rowColor = [245, 245, 245];
+
+      const cards = document.querySelectorAll(".card");
+
+      cards.forEach((card, index) => {
+        const rank = card.querySelector(".rank-circle").textContent;
+        const name = card.querySelector(".details h3").textContent;
+        const marks = card.querySelector(".total-marks").textContent;
+
+        doc.setFillColor(...rowColor);
+        doc.rect(10, y - 4, 190, 10, 'F');
+
+        doc.text(rank, 15, y);
+        doc.text(name, 75, y);
+        doc.text(marks, 140, y);
+
+        rowColor = rowColor[0] === 245 ? [255, 255, 255] : [245, 245, 245];
+
+        y += 10;
+        if (y > 270) {
+          doc.addPage();
+          y = 10;
+        }
+      });
+
+      const pageCount = doc.internal.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(10);
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(100, 100, 100);
+        doc.text(`Page ${i} of ${pageCount}`, 180, 290);
+        doc.text(`Date: ${new Date().toLocaleDateString()}`, 10, 290);
+      }
+
+      doc.save("quiz_leaderboard.pdf");
+    };
   </script>
 </body>
 </html>
